@@ -20,27 +20,28 @@
 package org.apache.james.mpt;
 
 import java.io.StringReader;
+import java.util.List;
+import java.util.Properties;
 
-import org.jmock.Mock;
-import org.jmock.MockObjectTestCase;
+import org.apache.james.mpt.ProtocolSession.ClientRequest;
+import org.jmock.Expectations;
+import org.jmock.integration.junit3.MockObjectTestCase;
 
 public class TestFileProtocolSessionBuilder extends MockObjectTestCase {
 
     private static final String SCRIPT_WITH_VARIABLES = "HELLO ${not} ${foo} WORLD ${bar}";
     private static final String SCRIPT_WITH_FOO_REPLACED_BY_WHATEVER = "HELLO ${not} whatever WORLD ${bar}";
     private static final String SCRIPT_WITH_VARIABLES_INLINED = "HELLO not foo WORLD bar";
-    
-    ProtocolSessionBuilder builder;
-    ProtocolInteractor session;
 
-    private Mock mockSession;
+    ProtocolSessionBuilder builder = new ProtocolSessionBuilder();
+    ProtocolSession protocolSession ;
+    Session mockSession = mock(Session.class);
+    
+    
     
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        builder = new ProtocolSessionBuilder();
-        mockSession = mock(ProtocolInteractor.class);
-        session = (ProtocolInteractor) mockSession.proxy();
     }
 
     @Override
@@ -48,39 +49,101 @@ public class TestFileProtocolSessionBuilder extends MockObjectTestCase {
         super.tearDown();
     }
 
-    private void addLines() throws Exception {
-        builder.addProtocolLines("A Script", new StringReader(ProtocolSessionBuilder.CLIENT_TAG + " " + SCRIPT_WITH_VARIABLES), session);
-    }
+
     
     public void testShouldPreserveContentsWhenNoVariablesSet() throws Exception {
-        mockSession.expects(once()).method("CL").with(eq(-1), eq(SCRIPT_WITH_VARIABLES));
-        addLines();
+        // expectations
+        checking(new Expectations() {{
+            one (mockSession).writeLine(SCRIPT_WITH_VARIABLES);
+        }});    	
+        
+        // execute
+        protocolSession = new ProtocolSession(new Properties());
+        ClientRequest clientRequest = protocolSession.new ClientRequest(SCRIPT_WITH_VARIABLES);
+        clientRequest.writeMessage(mockSession);
+        
     }
 
     public void testShouldReplaceVariableWhenSet() throws Exception {
-        mockSession.expects(once()).method("CL").with(eq(-1), eq(SCRIPT_WITH_FOO_REPLACED_BY_WHATEVER));
-        builder.setVariable("foo", "whatever");
-        addLines();
+        // expectations
+        checking(new Expectations() {{
+            one (mockSession).writeLine(SCRIPT_WITH_FOO_REPLACED_BY_WHATEVER);
+        }});    	
+        
+        // execute
+        Properties props = new Properties();
+        props.setProperty("foo", "whatever");
+        protocolSession = new ProtocolSession(props);
+        ClientRequest clientRequest = protocolSession.new ClientRequest(SCRIPT_WITH_VARIABLES);
+        clientRequest.writeMessage(mockSession);
     }
     
     public void testShouldReplaceAllVariablesWhenSet() throws Exception {
-        mockSession.expects(once()).method("CL").with(eq(-1), eq(SCRIPT_WITH_VARIABLES_INLINED));
-        builder.setVariable("bar", "bar");
-        builder.setVariable("foo", "foo");
-        builder.setVariable("not", "not");
-        addLines();
+        // expectations
+        checking(new Expectations() {{
+            one (mockSession).writeLine(SCRIPT_WITH_VARIABLES_INLINED);
+        }});    	
+        
+        // execute
+        Properties props = new Properties();
+        props.setProperty("bar", "bar");
+        props.setProperty("foo", "foo");
+        props.setProperty("not", "not");
+        protocolSession = new ProtocolSession(props);
+        ClientRequest clientRequest = protocolSession.new ClientRequest(SCRIPT_WITH_VARIABLES);
+        clientRequest.writeMessage(mockSession);
     }
     
     public void testShouldReplaceVariableAtBeginningAndEnd() throws Exception {
-        mockSession.expects(once()).method("CL").with(eq(-1), eq("whatever Some Other Scriptwhateverwhatever"));
-        builder.setVariable("foo", "whatever");
-        builder.addProtocolLines("A Script", new StringReader(ProtocolSessionBuilder.CLIENT_TAG + " " + "${foo} Some Other Script${foo}${foo}"), session);
+        // expectations
+        checking(new Expectations() {{
+            one (mockSession).writeLine("whatever Some Other Scriptwhateverwhatever");
+        }});    	
+        
+        // execute
+        Properties props = new Properties();
+        props.setProperty("foo", "whatever");
+        protocolSession = new ProtocolSession(props);
+        ClientRequest clientRequest = protocolSession.new ClientRequest("${foo} Some Other Script${foo}${foo}");
+        clientRequest.writeMessage(mockSession);
     }
     
     public void testShouldIgnoreNotQuiteVariables() throws Exception {
         final String NEARLY = "{foo}${}${foo Some Other Script${foo}";
-        mockSession.expects(once()).method("CL").with(eq(-1), eq(NEARLY));
-        builder.setVariable("foo", "whatever");
-        builder.addProtocolLines("A Script", new StringReader(ProtocolSessionBuilder.CLIENT_TAG + " " + NEARLY), session);
+        // expectations
+        checking(new Expectations() {{
+            one (mockSession).writeLine(NEARLY);
+        }});    	
+        
+        // execute
+        Properties props = new Properties();
+        props.setProperty("foo", "whatever");
+        protocolSession = new ProtocolSession(props);
+        ClientRequest clientRequest = protocolSession.new ClientRequest(NEARLY);
+        clientRequest.writeMessage(mockSession);
     }
+    
+    public void testOneVaribleName(){
+    	String line = "S<foo>: a001 LOGIN";
+    	String expected = "foo";
+    	List<String> variableNames = builder.getVariableNames(line);
+    	assertEquals(expected, variableNames.get(0));
+    }
+    
+    public void testTwoVaribleNames(){
+    	String line = "S<foo><bar>: a001 LOGIN";
+    	String expected1 = "foo";
+    	String expected2 = "bar";
+    	List<String> variableNames = builder.getVariableNames(line);
+    	assertEquals(expected1, variableNames.get(0));
+    	assertEquals(expected2, variableNames.get(1));
+    }    
+    
+    public void testGetServerMessage(){
+    	String line = "S<foo><bar>: a001 LOGIN";
+    	String expected = "a001 LOGIN";
+    	String actual = builder.getServerMessage(line);
+    	assertEquals(expected, actual);
+    }
+    
 }

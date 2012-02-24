@@ -87,8 +87,7 @@ public class Runner {
         }
         SessionContinuation continuation = new SessionContinuation();
 
-        Session[] sessions = new Session[testElements
-                .getSessionCount()];
+        Session[] sessions = new Session[testElements.getSessionCount()];
 
         for (int i = 0; i < sessions.length; i++) {
             sessions[i] = factory.newSession(continuation);

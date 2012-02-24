@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -52,7 +54,17 @@ public class ProtocolSession implements ProtocolInteractor {
     private ProtocolElement nextTest;
 
     private boolean continueAfterFailure = false;
+    
+    private Properties variables;
+    
+    public ProtocolSession(Properties variables){
+    	this.variables = variables;
+    }
 
+    public ProtocolSession(){
+    	this.variables = new Properties();
+    }
+    
     public final boolean isContinueAfterFailure() {
         return continueAfterFailure;
     }
@@ -135,8 +147,7 @@ public class ProtocolSession implements ProtocolInteractor {
      * @see org.apache.james.mpt.ProtocolInteractor#SUB(java.util.List, java.lang.String)
      */
     public void SUB(List<String> serverLines, String location) {
-        testElements
-                .add(new ServerUnorderedBlockResponse(serverLines, location));
+        testElements.add(new ServerUnorderedBlockResponse(serverLines, location));
     }
 
     /**
@@ -158,18 +169,19 @@ public class ProtocolSession implements ProtocolInteractor {
     /**
      * @see org.apache.james.mpt.ProtocolInteractor#SL(int, java.lang.String, java.lang.String, java.lang.String)
      */
-    public void SL(int sessionNumber, String serverLine, String location,
-            String lastClientMessage) {
+    public void SL(int sessionNumber, String serverLine, String location, String lastClientMessage, String[] variableNames, Properties variables) {
         this.maxSessionNumber = Math.max(this.maxSessionNumber, sessionNumber);
-        testElements.add(new ServerResponse(sessionNumber, serverLine,
-                location, lastClientMessage));
+        testElements.add(new ServerResponse(sessionNumber, serverLine, location, lastClientMessage, variableNames));
     }
+    
+    public void SL(int sessionNumber, String serverLine, String location, String lastClientMessage) {
+        SL(sessionNumber, serverLine, location, lastClientMessage, null, null);
+    }    
 
     /**
      * @see org.apache.james.mpt.ProtocolInteractor#SUB(int, java.util.List, java.lang.String, java.lang.String)
      */
-    public void SUB(int sessionNumber, List<String> serverLines, String location,
-            String lastClientMessage) {
+    public void SUB(int sessionNumber, List<String> serverLines, String location, String lastClientMessage) {
         this.maxSessionNumber = Math.max(this.maxSessionNumber, sessionNumber);
         testElements.add(new ServerUnorderedBlockResponse(sessionNumber,
                 serverLines, location, lastClientMessage));
@@ -178,7 +190,7 @@ public class ProtocolSession implements ProtocolInteractor {
     /**
      * A client request, which write the specified message to a Writer.
      */
-    private class ClientRequest implements ProtocolElement {
+    public class ClientRequest implements ProtocolElement {
         private int sessionNumber;
 
         private String message;
@@ -208,8 +220,7 @@ public class ProtocolSession implements ProtocolInteractor {
          * 
          * @throws Exception
          */
-        public void testProtocol(Session[] sessions,
-                boolean continueAfterFailure) throws Exception {
+        public void testProtocol(Session[] sessions, boolean continueAfterFailure) throws Exception {
             if (sessionNumber < 0) {
                 for (int i = 0; i < sessions.length; i++) {
                     Session session = sessions[i];
@@ -221,10 +232,42 @@ public class ProtocolSession implements ProtocolInteractor {
             }
         }
 
-        private void writeMessage(Session session) throws Exception {
-            session.writeLine(message);
+        public void writeMessage(Session session) throws Exception {
+            session.writeLine(substituteVariables(message));
         }
 
+        /**
+         * Replaces ${<code>NAME</code>} with variable value.
+         * @param line not null
+         * @return not null
+         */
+        protected String substituteVariables(String line) {
+            if (variables.size() > 0) {
+                final StringBuffer buffer = new StringBuffer(line);
+                int start = 0;
+                int end = 0;
+                while (start >= 0 && end >= 0) { 
+                    start = buffer.indexOf("${", end);
+                    if (start < 0) {
+                        break;
+                    }
+                    end = buffer.indexOf("}", start);
+                    if (end < 0) {
+                        break;
+                    }
+                    final String name = buffer.substring(start+2, end);
+                    final String value = variables.getProperty(name);
+                    if (value != null) {
+                        buffer.replace(start, end + 1, value);
+                        final int variableLength = (end - start + 2);
+                        end = end + (value.length() - variableLength);
+                    }
+                }
+                line = buffer.toString();
+            }
+            return line;
+        }
+        
         public boolean isClient() {
             return true;
         }
@@ -264,7 +307,10 @@ public class ProtocolSession implements ProtocolInteractor {
         private String expectedLine;
 
         protected String location;
-
+        
+        // The variable names to be captured for this line
+        protected String[] variableNames;
+        
         /**
          * Sets up a server response.
          * 
@@ -275,7 +321,7 @@ public class ProtocolSession implements ProtocolInteractor {
          *            A descriptive value to use in error messages.
          */
         public ServerResponse(String expectedPattern, String location) {
-            this(-1, expectedPattern, location, null);
+            this(-1, expectedPattern, location, null, null);
         }
 
         /**
@@ -290,11 +336,12 @@ public class ProtocolSession implements ProtocolInteractor {
          *            A descriptive value to use in error messages.
          */
         public ServerResponse(int sessionNumber, String expectedPattern,
-                String location, String lastClientMessage) {
+                String location, String lastClientMessage, String[] variableNames) {
             this.sessionNumber = sessionNumber;
             this.expectedLine = expectedPattern;
             this.location = location;
             this.lastClientMessage = lastClientMessage;
+            this.variableNames = variableNames;
         }
 
         /**
@@ -311,8 +358,7 @@ public class ProtocolSession implements ProtocolInteractor {
          *             If the actual server response didn't match the regular
          *             expression expected.
          */
-        public void testProtocol(Session[] sessions,
-                boolean continueAfterFailure) throws Exception {
+        public void testProtocol(Session[] sessions, boolean continueAfterFailure) throws Exception {
             if (sessionNumber < 0) {
                 for (int i = 0; i < sessions.length; i++) {
                     Session session = sessions[i];
@@ -324,8 +370,7 @@ public class ProtocolSession implements ProtocolInteractor {
             }
         }
 
-        protected void checkResponse(Session session,
-                boolean continueAfterFailure) throws Exception {
+        protected void checkResponse(Session session, boolean continueAfterFailure) throws Exception {
             String testLine = readLine(session);
             if (!match(expectedLine, testLine)) {
                 String errMsg = "\nLocation: " + location + "\nLastClientMsg: "
@@ -350,7 +395,20 @@ public class ProtocolSession implements ProtocolInteractor {
          * @return <code>true</code> if the actual matches the expected.
          */
         protected boolean match(String expected, String actual) {
-            final boolean result = Pattern.matches(expected, actual);
+        	boolean result = false;
+        	
+        	if (variableNames != null){
+        		// need to assign some variables from server response
+        		Matcher m = Pattern.compile(expected).matcher(actual);
+        		int n = 0;
+        		while (m.find()){
+        			variables.setProperty(variableNames[n], m.group(1));
+        			n++;
+        		}
+        	} 
+    		// do the straight match
+            result = Pattern.matches(expected, actual);
+                
             return result;
         }
 
@@ -432,10 +490,8 @@ public class ProtocolSession implements ProtocolInteractor {
          * @param location
          *            A descriptive location string for error messages.
          */
-        public ServerUnorderedBlockResponse(int sessionNumber,
-                List<String> expectedLines, String location, String lastClientMessage) {
-            super(sessionNumber, "<Unordered Block>", location,
-                    lastClientMessage);
+        public ServerUnorderedBlockResponse(int sessionNumber, List<String> expectedLines, String location, String lastClientMessage) {
+            super(sessionNumber, "<Unordered Block>", location, lastClientMessage, null);
             this.expectedLines = expectedLines;
         }
 
@@ -450,8 +506,7 @@ public class ProtocolSession implements ProtocolInteractor {
          *             If a line is encountered which doesn't match one of the
          *             expected lines.
          */
-        protected void checkResponse(Session session,
-                boolean continueAfterFailure) throws Exception {
+        protected void checkResponse(Session session, boolean continueAfterFailure) throws Exception {
             List<String> testLines = new ArrayList<String>(expectedLines);
             while (testLines.size() > 0) {
                 String actualLine = readLine(session);

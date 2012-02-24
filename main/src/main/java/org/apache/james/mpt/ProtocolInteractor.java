@@ -20,6 +20,7 @@
 package org.apache.james.mpt;
 
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Scripts a protocol interaction.
@@ -59,6 +60,9 @@ public interface ProtocolInteractor {
     public abstract void SL(int sessionNumber, String serverLine,
             String location, String lastClientMessage);
 
+    public abstract void SL(int sessionNumber, String serverLine,
+            String location, String lastClientMessage, String[] variableNames, Properties variables);
+    
     /**
      * adds a new Server Unordered Block to the test elements.
      */

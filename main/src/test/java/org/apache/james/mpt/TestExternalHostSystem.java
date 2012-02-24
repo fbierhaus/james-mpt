@@ -20,8 +20,8 @@
 package org.apache.james.mpt;
 
 import org.apache.james.mpt.HostSystem.Continuation;
-import org.jmock.Mock;
-import org.jmock.MockObjectTestCase;
+import org.jmock.Expectations;
+import org.jmock.integration.junit3.MockObjectTestCase;
 
 public class TestExternalHostSystem extends MockObjectTestCase {
 
@@ -38,11 +38,10 @@ public class TestExternalHostSystem extends MockObjectTestCase {
     
     private DiscardProtocol.Record record;
 
-    private Continuation continuation;
+    private Continuation continuation = mock(Continuation.class);
 
-    private UserAdder userAdder;
+    private UserAdder userAdder = mock(UserAdder.class);
 
-    private Mock mockUserAdder;
     
     @Override
     protected void setUp() throws Exception {
@@ -50,9 +49,6 @@ public class TestExternalHostSystem extends MockObjectTestCase {
         protocol = new DiscardProtocol(PORT);
         protocol.start();
         record = protocol.recordNext();
-        continuation = (Continuation) mock(Continuation.class).proxy();
-        mockUserAdder = mock(UserAdder.class);
-        userAdder = (UserAdder) mockUserAdder.proxy();
     }
 
     @Override
@@ -70,7 +66,11 @@ public class TestExternalHostSystem extends MockObjectTestCase {
     }
     
     public void testAddUser() throws Exception {
-        mockUserAdder.expects(once()).method("addUser").with(eq(USER), eq(PASSWORD));
+        // expectations
+        checking(new Expectations() {{
+            one (userAdder).addUser(USER, PASSWORD);
+        }});    
+        //mockUserAdder.expects(once()).method("addUser").with(eq(USER), eq(PASSWORD));
         ExternalHostSystem system = buildSystem(SHABANG);
         system.addUser(USER, PASSWORD);
     }

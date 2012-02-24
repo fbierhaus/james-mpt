@@ -60,8 +60,9 @@ interfaces to the MPT library.</description>
             <artifactId>junit</artifactId>
         </dependency>
         <dependency>
-            <groupId>jmock</groupId>
-            <artifactId>jmock</artifactId>
+			  <groupId>org.jmock</groupId>
+			  <artifactId>jmock-junit3</artifactId>
+			  <version>2.5.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -158,18 +158,22 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>3.8.1</version>
+                <version>3.8.2</version>
             </dependency>
-            <dependency>
-                <groupId>jmock</groupId>
-                <artifactId>jmock</artifactId>
-                <version>1.1.0</version>
-                <scope>test</scope>
-            </dependency>
+			<dependency>
+			  <groupId>org.jmock</groupId>
+			  <artifactId>jmock-junit3</artifactId>
+			  <version>2.5.1</version>
+			</dependency>
+			<dependency>
+			  <groupId>org.jmock</groupId>
+			  <artifactId>jmock-legacy</artifactId>
+			  <version>2.5.1</version>
+			</dependency>			
             <dependency>
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant</artifactId>
-                <version>1.7.1</version>
+                <version>1.8.2</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>

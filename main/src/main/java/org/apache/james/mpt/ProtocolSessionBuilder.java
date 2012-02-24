@@ -26,6 +26,8 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -42,6 +44,8 @@ public class ProtocolSessionBuilder {
     public static final String CLIENT_TAG = "C:";
 
     public static final String SERVER_TAG = "S:";
+    
+    public static final String SERVER_CAPTURE_TAG = "S<";
 
     public static final String OPEN_UNORDERED_BLOCK_TAG = "SUB {";
 
@@ -52,6 +56,7 @@ public class ProtocolSessionBuilder {
     public static final String SESSION_TAG = "SESSION:";
 
     private final Properties variables;
+    
     
     public ProtocolSessionBuilder() {
         variables = new Properties();
@@ -79,7 +84,7 @@ public class ProtocolSessionBuilder {
      */
     public ProtocolInteractor buildProtocolSession(String fileName)
             throws Exception {
-        ProtocolInteractor session = new ProtocolSession();
+        ProtocolInteractor session = new ProtocolSession(variables);
         addTestFile(fileName, session);
         return session;
     }
@@ -93,7 +98,7 @@ public class ProtocolSessionBuilder {
      */
     public ProtocolInteractor buildProtocolSession(final String scriptName, final Reader reader)
             throws Exception {
-        ProtocolInteractor session = new ProtocolSession();
+        ProtocolInteractor session = new ProtocolSession(variables);
         addProtocolLines(scriptName, reader, session);
         return session;
     }
@@ -172,7 +177,6 @@ public class ProtocolSessionBuilder {
         int lineNumber = -1;
         String lastClientMsg = "";
         while ((line = reader.readLine()) != null) {
-            line = substituteVariables(line);
             String location = scriptName + ":" + lineNumber;
             if (SERVER_CONTINUATION_TAG.equals(line)) {
                 session.CONT(sessionNumber);
@@ -189,6 +193,10 @@ public class ProtocolSessionBuilder {
                     serverMsg = line.substring(3);
                 }
                 session.SL(sessionNumber, serverMsg, location, lastClientMsg);
+            } else if (line.startsWith(SERVER_CAPTURE_TAG)){
+            	List<String> variableNames = getVariableNames(line);
+            	String serverMsg = getServerMessage(line);
+                session.SL(sessionNumber, serverMsg, location, lastClientMsg, variableNames.toArray(new String[variableNames.size()]), variables);
             } else if (line.startsWith(OPEN_UNORDERED_BLOCK_TAG)) {
                 List<String> unorderedLines = new ArrayList<String>(5);
                 line = reader.readLine();
@@ -226,36 +234,23 @@ public class ProtocolSessionBuilder {
         }
     }
 
-    /**
-     * Replaces ${<code>NAME</code>} with variable value.
-     * @param line not null
-     * @return not null
-     */
-    private String substituteVariables(String line) {
-        if (variables.size() > 0) {
-            final StringBuffer buffer = new StringBuffer(line);
-            int start = 0;
-            int end = 0;
-            while (start >= 0 && end >= 0) { 
-                start = buffer.indexOf("${", end);
-                if (start < 0) {
-                    break;
-                }
-                end = buffer.indexOf("}", start);
-                if (end < 0) {
-                    break;
-                }
-                final String name = buffer.substring(start+2, end);
-                final String value = variables.getProperty(name);
-                if (value != null) {
-                    buffer.replace(start, end + 1, value);
-                    final int variableLength = (end - start + 2);
-                    end = end + (value.length() - variableLength);
-                }
-            }
-            line = buffer.toString();
-        }
-        return line;
+    protected List<String> getVariableNames(String line){
+    	Matcher m = Pattern.compile("<([\\w]+?)>").matcher(line);
+        List<String> variableNames = new ArrayList<String>();
+
+    	int n = 0; 
+    	while(m.find()){
+    		variableNames.add(n, m.group(1));
+    		n++;
+    	}
+    	return variableNames;
     }
+    
+    protected String getServerMessage(String line){
+    	int colonPos = line.indexOf(':');
+    	return line.substring(colonPos + 1).trim();
+    }
+    
+    
 
 }
