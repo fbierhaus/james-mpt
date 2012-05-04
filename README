@@ -1,1 +1,25 @@
-A "fork" of the James MPT svn repo.
+A "re-imagining" of James MPT.  Goals that are important to me are:
+
+- Support for multiple hosts in a single script.  This is useful
+when there is a restricted interface and a full interface, e.g. 
+normal user experience vs. admin tool.  Without this support, a 
+single script couldn't test interactions that span the 2 interfaces.
+
+- Variables that can be assigned by server output.  For example,
+capturing the UID of a message and subsequently using that value
+later in the script, in both client requests and expected server
+responses.
+
+
+Each script is run as a test case
+Pre/post scripts?
+Integration into ant
+users?
+hosts 
+- defined in ant or script or properties?
+- properties wouldn't require changing build.xml for different envs
+- should be defined only once
+Runner
+Parse scripts?
+antlib
+

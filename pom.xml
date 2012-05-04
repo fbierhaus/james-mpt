@@ -21,41 +21,19 @@
     xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <artifactId>james-project</artifactId>
-        <groupId>org.apache.james</groupId>
-        <version>1.8</version>
-        <relativePath></relativePath>
-    </parent>
-
-    <artifactId>apache-james-mpt-project</artifactId>
-    <version>0.2-SNAPSHOT</version>
-    <packaging>pom</packaging>
+	<groupId>org.apache.james</groupId>
+	<artifactId>apache-james-mpt</artifactId>
+    <version>0.3-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <name>Apache JAMES MPT Project</name>
     <description>Functional test framework specialised for the ASCII line-base protocols common in mail.</description>
     <url>http://james.apache.org/mpt/</url>
     <inceptionYear>2008</inceptionYear>
 
-    <modules>
-        <module>main</module>
-        <module>antlib</module>
-        <module>app</module>
-        <module>assemble</module>
-        <module>mavenplugin</module>
-    </modules>
-
-    <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/james/mpt/trunk</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/james/mpt/trunk</developerConnection>
-        <url>http://svn.apache.org/viewcvs.cgi/james/mpt/trunk?root=Apache-SVN</url>
-    </scm>
-    <issueManagement>
-        <system>JIRA</system>
-        <url>http://issues.apache.org/jira/browse/MPT</url>
-    </issueManagement>
 
     <distributionManagement>
         <site>
@@ -88,106 +66,12 @@
         <james.mpt.www>${james.www}/mpt/</james.mpt.www>
         <!-- Overridding this value allows single set of loopback settings to be maintained -->
         <james.www.id>mpt-website</james.www.id>
-        <target.jdk>1.5</target.jdk>
+
+        <target.jdk>1.6</target.jdk>
+	    <maven.compiler.target>1.6</maven.compiler.target>
+	    <maven.compiler.source>1.6</maven.compiler.source>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>apache-james-mpt-antlib</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>apache-james-mpt-antlib</artifactId>
-                <version>${project.version}</version>
-                <classifier>tests</classifier>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>apache-james-mpt-app</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>apache-james-mpt-app</artifactId>
-                <version>${project.version}</version>
-                <classifier>tests</classifier>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>apache-james-mpt-main</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>apache-james-mpt-main</artifactId>
-                <version>${project.version}</version>
-                <classifier>tests</classifier>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>1.1</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>logkit</artifactId>
-                        <groupId>logkit</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>avalon-framework</artifactId>
-                        <groupId>avalon-framework</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>log4j</artifactId>
-                        <groupId>log4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>servlet-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>3.8.2</version>
-            </dependency>
-			<dependency>
-			  <groupId>org.jmock</groupId>
-			  <artifactId>jmock-junit3</artifactId>
-			  <version>2.5.1</version>
-			</dependency>
-			<dependency>
-			  <groupId>org.jmock</groupId>
-			  <artifactId>jmock-legacy</artifactId>
-			  <version>2.5.1</version>
-			</dependency>			
-            <dependency>
-                <groupId>org.apache.ant</groupId>
-                <artifactId>ant</artifactId>
-                <version>1.8.2</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.ant</groupId>
-                <artifactId>ant-antunit</artifactId>
-                <version>1.1</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>commons-cli</groupId>
-                <artifactId>commons-cli</artifactId>
-                <version>1.1</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <build>
         <plugins>
@@ -254,4 +138,11 @@
             </plugin>
         </plugins>
     </build>
+    <dependencies>
+    	<dependency>
+    		<groupId>org.apache.ant</groupId>
+    		<artifactId>ant</artifactId>
+    		<version>1.8.2</version>
+    	</dependency>
+    </dependencies>
 </project>

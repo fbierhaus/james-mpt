@@ -1,4 +1,4 @@
-Apache James MPT uses Maven 2 (see http://maven.apache.org)
+Apache James MPT uses Maven 3 (see http://maven.apache.org)
 
 Once Maven has been installed, running
 
