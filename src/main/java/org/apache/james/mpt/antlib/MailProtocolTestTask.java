@@ -22,7 +22,10 @@ package org.apache.james.mpt.antlib;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,6 +33,7 @@ import java.util.Map;
 
 import org.apache.james.mpt.ExternalHostSystem;
 import org.apache.james.mpt.Monitor;
+import org.apache.james.mpt.ProtocolInteractor;
 import org.apache.james.mpt.ProtocolSessionBuilder;
 import org.apache.james.mpt.RemoteHost;
 import org.apache.james.mpt.Runner;
@@ -48,6 +52,8 @@ import org.apache.tools.ant.types.resources.Union;
  */
 public class MailProtocolTestTask extends Task implements Monitor{
 
+	private static final String TIMESTAMP = "timestamp";
+	
     private boolean quiet = false;
     private File script;
     private Union scripts;
@@ -198,6 +204,9 @@ public class MailProtocolTestTask extends Task implements Monitor{
 		}
     	
         final ProtocolSessionBuilder builder = new ProtocolSessionBuilder();
+        Date current = new Date();
+        DateFormat df = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+        builder.setVariable(TIMESTAMP, df.format(current));
         
         if (scripts == null) {
             scripts = new Union();
@@ -209,13 +218,12 @@ public class MailProtocolTestTask extends Task implements Monitor{
             note(" --- Running script: " + resource.getName() + " --- ");
             try {
                 final Runner runner = new Runner();
-                
+
                 try {
                     
                     final InputStream inputStream = resource.getInputStream();
-                    final String name = resource.getName();
-                    builder.addProtocolLines(name == null ? "[Unknown]" : name, inputStream, runner.getTestElements());
-                    runner.runSessions(sessionMap);
+                    ProtocolInteractor testScript = builder.buildProtocolSession(resource.getName(), inputStream, sessionMap);
+                    runner.runSessions(testScript);
                     
                 } catch (UnsupportedOperationException e) {
                     log("Resource cannot be read: " + resource.getName(), Project.MSG_WARN);

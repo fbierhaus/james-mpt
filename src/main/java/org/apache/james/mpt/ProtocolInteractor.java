@@ -20,7 +20,7 @@
 package org.apache.james.mpt;
 
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * Scripts a protocol interaction.
@@ -55,7 +55,7 @@ public interface ProtocolInteractor {
      */
     public abstract void SL(String serverLine, String location, String lastClientMessage);
 
-    public abstract void SL(String serverLine, String location, String lastClientMessage, String[] variableNames, Properties variables);
+    public abstract void SL(String serverLine, String location, String lastClientMessage, String[] variableNames);
     
     /**
      * adds a new Server Unordered Block to the test elements.
@@ -75,4 +75,18 @@ public interface ProtocolInteractor {
      * @throws Exception 
      */
     public abstract void SS(String alias) throws Exception;
+    
+    /**
+     * Runs the script.
+     * 
+     * @throws Exception
+     */
+    public void execute() throws Exception;
+    
+    /**
+     * Returns the map of sessions used in this test script.
+     * 
+     * @return
+     */
+    public Map<String, Session> getSessions();
 }

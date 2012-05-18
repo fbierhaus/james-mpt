@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -80,16 +81,21 @@ public class ProtocolSessionBuilder {
      * Builds a ProtocolSession by reading lines from the test file with the
      * supplied name.
      * 
-     * @param fileName
+     * @param scriptName
      *            The name of the protocol session file.
      * @return The ProtocolSession
      */
-    // TODO remove?
-    public ProtocolInteractor buildProtocolSession(String fileName)  throws Exception {
-        ProtocolInteractor session = new ProtocolSession(variables);
-        addTestFile(fileName, session);
+    public ProtocolInteractor buildProtocolSession(String scriptName, Map<String, Session> sessionMap)  throws Exception {
+        ProtocolInteractor session = new ProtocolSession(sessionMap, variables);
+        addTestFile(scriptName, session);
         return session;
     }
+    
+    public ProtocolInteractor buildProtocolSession(String scriptName, InputStream is, Map<String, Session> sessionMap)  throws Exception {
+        ProtocolInteractor session = new ProtocolSession(sessionMap, variables);
+        addProtocolLines(scriptName, is, session);
+        return session;
+    }    
     
     /**
      * Builds a ProtocolSession by reading lines from the reader.
@@ -98,9 +104,8 @@ public class ProtocolSessionBuilder {
      * @param reader not null
      * @return The ProtocolSession
      */
-    // TODO remove?
-    public ProtocolInteractor buildProtocolSession(final String scriptName, final Reader reader)  throws Exception {
-        ProtocolInteractor session = new ProtocolSession(variables);
+    public ProtocolInteractor buildProtocolSession(final String scriptName, final Reader reader, Map<String, Session> sessionMap)  throws Exception {
+        ProtocolInteractor session = new ProtocolSession(sessionMap, variables);
         addProtocolLines(scriptName, reader, session);
         return session;
     }
@@ -136,6 +141,7 @@ public class ProtocolSessionBuilder {
      *            The ProtocolSession to add elements to.
      */
     public void addProtocolLines(String scriptName, InputStream is, ProtocolInteractor session) throws Exception {
+    	
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         
         doAddProtocolLines(session, scriptName, reader);
@@ -196,7 +202,7 @@ public class ProtocolSessionBuilder {
             } else if (line.startsWith(SERVER_CAPTURE_TAG)){
             	List<String> variableNames = getVariableNames(line);
             	String serverMsg = getServerMessage(line);
-                session.SL(serverMsg, location, lastClientMsg, variableNames.toArray(new String[variableNames.size()]), variables);
+                session.SL(serverMsg, location, lastClientMsg, variableNames.toArray(new String[variableNames.size()]));
             } else if (line.startsWith(OPEN_UNORDERED_BLOCK_TAG)) {
                 List<String> unorderedLines = new ArrayList<String>(5);
                 line = reader.readLine();

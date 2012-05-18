@@ -58,11 +58,13 @@ public class ProtocolSession implements ProtocolInteractor {
     
     private Session currentSession;
     
-    public ProtocolSession(Properties variables){
+    public ProtocolSession(Map<String, Session> sessionMap,Properties variables){
+    	this.sessionMap = sessionMap;
     	this.variables = variables;
     }
 
-    public ProtocolSession(){
+    public ProtocolSession(Map<String, Session> sessionMap){
+    	this.sessionMap = sessionMap;
     	this.variables = new Properties();
     }
     
@@ -73,11 +75,18 @@ public class ProtocolSession implements ProtocolInteractor {
     public final void setContinueAfterFailure(boolean continueAfterFailure) {
         this.continueAfterFailure = continueAfterFailure;
     }
-    
-    public void setSessionMap(Map<String, Session> sessionMap){
-    	this.sessionMap = sessionMap;
-    }
 
+
+    public void setVariables(Properties variables){
+    	this.variables.putAll(variables);
+    }
+    
+
+	@Override
+	public Map<String, Session> getSessions() {
+		return sessionMap;
+	}    
+    
     /**
      * Returns the number of sessions required to run this ProtocolSession. If
      * the number of readers and writers provided is less than this number, an
@@ -165,12 +174,12 @@ public class ProtocolSession implements ProtocolInteractor {
     /**
      * @see org.apache.james.mpt.ProtocolInteractor#SL(int, java.lang.String, java.lang.String, java.lang.String)
      */
-    public void SL(String serverLine, String location, String lastClientMessage, String[] variableNames, Properties variables) {
+    public void SL(String serverLine, String location, String lastClientMessage, String[] variableNames) {
         testElements.add(new ServerResponse(serverLine, location, lastClientMessage, variableNames));
     }
     
     public void SL(String serverLine, String location, String lastClientMessage) {
-        SL(serverLine, location, lastClientMessage, null, null);
+        SL(serverLine, location, lastClientMessage, null);
     }    
 
     /**
@@ -687,6 +696,8 @@ public class ProtocolSession implements ProtocolInteractor {
     
         return result;
     }
+
+
     
     
 }
