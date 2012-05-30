@@ -206,7 +206,6 @@ public class MailProtocolTestTask extends Task implements Monitor{
         final ProtocolSessionBuilder builder = new ProtocolSessionBuilder();
         Date current = new Date();
         DateFormat df = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
-        builder.setVariable(TIMESTAMP, df.format(current));
         
         if (scripts == null) {
             scripts = new Union();
@@ -222,6 +221,7 @@ public class MailProtocolTestTask extends Task implements Monitor{
                 try {
                     
                     final InputStream inputStream = resource.getInputStream();
+                    builder.setVariable(TIMESTAMP, df.format(current));
                     ProtocolInteractor testScript = builder.buildProtocolSession(resource.getName(), inputStream, sessionMap);
                     runner.runSessions(testScript);
                     
