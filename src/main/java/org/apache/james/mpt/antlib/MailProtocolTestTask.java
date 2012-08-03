@@ -61,6 +61,15 @@ public class MailProtocolTestTask extends Task implements Monitor{
     private String shabang = null;
     private List<RemoteHost> remoteHosts = new ArrayList<RemoteHost>();
     private String errorProperty;
+    private String cmdLineFile;
+    
+    public String getFile(){
+    	return cmdLineFile;
+    }
+    
+    public void setFile(String cmdLineFile){
+    	this.cmdLineFile = cmdLineFile;
+    }
     
     /**
      * Gets the error property.
@@ -212,8 +221,16 @@ public class MailProtocolTestTask extends Task implements Monitor{
             scripts.add(new FileResource(script));
         }
         
+        String singleFile = getProject().getProperty("single.file");
+        
         for (final Iterator<Resource> it=scripts.iterator();it.hasNext();) {
             final Resource resource = it.next();
+            
+            // if a the single.file property is set on the command line, then just run that script only
+            if ((singleFile != null) && (! resource.getName().contains(singleFile))) {
+				continue;
+			}
+            
             note(" --- Running script: " + resource.getName() + " --- ");
             try {
                 final Runner runner = new Runner();
