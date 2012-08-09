@@ -23,3 +23,14 @@ Runner
 Parse scripts?
 antlib
 
+C: a005 APPEND INBOX {2316}
+S: \+ Ready for literal data
+C: ATTACHMENT {
+C: header
+C: header
+C: blah
+C: blah
+C: FILE=foo.jpg
+C: blah
+C: }
+S: a005 OK \[Message-ID [0-9a-zA-Z_]+\] APPEND \[200\] Command successful

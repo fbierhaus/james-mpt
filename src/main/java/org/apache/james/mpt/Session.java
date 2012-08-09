@@ -19,6 +19,8 @@
 
 package org.apache.james.mpt;
 
+import java.io.IOException;
+
 /**
  * A connection to the host.
  */
@@ -52,4 +54,6 @@ public interface Session {
      * @throws Exception
      */
     public void stop() throws Exception;
+    
+    public void writeData(Attachment attachment)  throws IOException;
 }

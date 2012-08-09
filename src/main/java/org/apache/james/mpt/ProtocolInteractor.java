@@ -32,6 +32,8 @@ public interface ProtocolInteractor {
      */
     public abstract void CL(String clientLine);
 
+    public abstract void BINARY(Attachment attachment);
+    
     /**
      * adds a new Server Response line to the test elements, with the specified
      * location.

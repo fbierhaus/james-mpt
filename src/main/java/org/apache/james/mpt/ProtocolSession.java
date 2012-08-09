@@ -196,6 +196,10 @@ public class ProtocolSession implements ProtocolInteractor {
     public void SS(String alias) throws Exception{
     	testElements.add(new SetSessionElement(alias));
     }
+    
+    public void BINARY(Attachment attachment){
+    	testElements.add(new ClientAttachment(attachment));
+    }
 
     /**
      * A client request, which write the specified message to a Writer.
@@ -646,6 +650,23 @@ public class ProtocolSession implements ProtocolInteractor {
 		public boolean isClient() {
 			return false;
 		}	
+    }
+    
+    public class ClientAttachment implements ProtocolElement {
+    	private Attachment attachment;
+    	
+    	public ClientAttachment(Attachment attachment){
+    		this.attachment = attachment;
+    	}
+    	
+        public void testProtocol(boolean continueAfterFailure) throws Exception{
+        	currentSession.writeData(attachment);
+        }
+
+        public boolean isClient(){
+        	return true;
+        }
+        
     }
     
     /**

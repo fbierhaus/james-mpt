@@ -20,6 +20,9 @@
 package org.apache.james.mpt;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -51,12 +54,18 @@ public class ProtocolSessionBuilder {
     public static final String OPEN_UNORDERED_BLOCK_TAG = "SUB {";
 
     public static final String CLOSE_UNORDERED_BLOCK_TAG = "}";
+    
+    public static final String OPEN_ATTACHEMNT_BLOCK_TAG = "ATTACHMENT {";
+    
+    public static final String CLOSE_ATTACHEMNT_BLOCK_TAG = "}";
 
     public static final String COMMENT_TAG = "#";
 
     public static final String SESSION_TAG = "SESSION:";
     
     public static final String SLEEP_TAG = "SLEEP:";
+
+	public static final String ATTACHMENT_TAG = "FILE=";
 
     private final Properties variables;
     
@@ -219,6 +228,45 @@ public class ProtocolSessionBuilder {
                 }
 
                 session.SUB(unorderedLines, location, lastClientMsg);
+            } else if (line.startsWith(OPEN_ATTACHEMNT_BLOCK_TAG)){
+            	// read all lines (array list of lines), sum size
+            	List lines = new ArrayList();
+            	int bytes = 0;
+            	
+            	while(!line.startsWith(CLOSE_ATTACHEMNT_BLOCK_TAG)){
+            		line = reader.readLine();
+            		if (line.startsWith(ATTACHMENT_TAG)) {
+            			// read file into byte[]
+            			String filename = getFilename(line);
+            			System.out.println("pwd: " + new File(".").getCanonicalPath());
+            			System.out.println("Filename: " + filename + "\n");
+            			byte[] data = getBytesFromFile(filename);
+						// add bytes to sum
+            			bytes += data.length;
+            			lines.add(new Attachment(data, filename));
+					}else{
+						System.out.print("Line: " + line + "\n");
+	            		lines.add(line);
+	            		bytes += line.length();
+					}
+            		lineNumber++;
+            	}
+            	// append size to first line, call session.CL
+            	String firstLine = (String) lines.get(0) + " {" + bytes + "}";
+            	session.CL(firstLine);
+            	
+            	// second line call session.SL
+            	session.SL((String) lines.get(1), location, firstLine);
+            	
+            	// for the rest, read in lines and call session.CL
+            	for (int i = 2; i < lines.size(); i++) {
+            		Object lineObject = lines.get(i);
+            		if (lineObject instanceof String) {
+						session.CL((String)lineObject);
+					} else {
+						session.BINARY((Attachment) lineObject);
+					}
+				}
             } else if (line.startsWith(COMMENT_TAG) || line.trim().length() == 0) {
                 // ignore these lines.
             } else if (line.startsWith(SESSION_TAG)) {
@@ -283,6 +331,52 @@ public class ProtocolSessionBuilder {
     	return alias;
     	
     }
+    
+    protected String getFilename(String line){
+    	String filename = line.split("=")[1];
+    	
+    	return filename;
+    }
+    
+    
+    protected byte[] getBytesFromFile(String filename) throws IOException {
+    	File file = new File(filename);
+        InputStream is = new FileInputStream(file);
+
+        // Get the size of the file
+        long length = file.length();
+
+        // You cannot create an array using a long type.
+        // It needs to be an int type.
+        // Before converting to an int type, check
+        // to ensure that file is not larger than Integer.MAX_VALUE.
+        if (length > Integer.MAX_VALUE) {
+            // File is too large
+        	is.close();
+        	throw new IOException("File size is too big: " + length);
+        }
+
+        // Create the byte array to hold the data
+        byte[] bytes = new byte[(int)length];
+
+        // Read in the bytes
+        int offset = 0;
+        int numRead = 0;
+        while (offset < bytes.length
+               && (numRead=is.read(bytes, offset, bytes.length-offset)) >= 0) {
+            offset += numRead;
+        }
+
+        // Ensure all the bytes have been read in
+        if (offset < bytes.length) {
+        	is.close();
+            throw new IOException("Could not completely read file "+file.getName());
+        }
+
+        // Close the input stream and return bytes
+        is.close();
+        return bytes;
+    }    
     
 
 }

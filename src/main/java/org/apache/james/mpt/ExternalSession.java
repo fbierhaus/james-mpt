@@ -165,7 +165,22 @@ final class ExternalSession implements Session {
         monitor.debug("[Done]");
     }
     
- 
+    /**
+     * Writes binary data to the channel.
+     * 
+     * @param data
+     * @param fileName
+     * @throws IOException
+     */
+    public void writeData(Attachment attachment) throws IOException{
+    	monitor.note("-> binary file: " + attachment.getFilename());
+    	monitor.debug("[Writing binary data]");
+    	ByteBuffer writeBuffer = ByteBuffer.wrap(attachment.getData());
+        while (writeBuffer.hasRemaining()) {
+        	channel.write(writeBuffer);
+        }    	
+        monitor.debug("[Done]");
+    }
 
     /**
      * Constructs a <code>String</code> with all attributes
