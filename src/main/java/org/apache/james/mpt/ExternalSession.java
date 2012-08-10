@@ -173,12 +173,16 @@ final class ExternalSession implements Session {
      * @throws IOException
      */
     public void writeData(Attachment attachment) throws IOException{
-    	monitor.note("-> binary file: " + attachment.getFilename());
+    	monitor.note("-> binary file (" + attachment.getData().length + " bytes): " + attachment.getFilename());
     	monitor.debug("[Writing binary data]");
     	ByteBuffer writeBuffer = ByteBuffer.wrap(attachment.getData());
         while (writeBuffer.hasRemaining()) {
         	channel.write(writeBuffer);
         }    	
+        lineEndBuffer.rewind();
+        while (lineEndBuffer.hasRemaining()) {
+        	channel.write(lineEndBuffer);
+        }
         monitor.debug("[Done]");
     }
 

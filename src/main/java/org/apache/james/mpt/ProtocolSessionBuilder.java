@@ -232,27 +232,32 @@ public class ProtocolSessionBuilder {
             	// read all lines (array list of lines), sum size
             	List lines = new ArrayList();
             	int bytes = 0;
+            	int blockLineCount = 0;
             	
             	while(!line.startsWith(CLOSE_ATTACHEMNT_BLOCK_TAG)){
             		line = reader.readLine();
             		if (line.startsWith(ATTACHMENT_TAG)) {
             			// read file into byte[]
             			String filename = getFilename(line);
-            			System.out.println("pwd: " + new File(".").getCanonicalPath());
-            			System.out.println("Filename: " + filename + "\n");
             			byte[] data = getBytesFromFile(filename);
-						// add bytes to sum
-            			bytes += data.length;
+						// add bytes to sum, add 2 for CRLF 
+            			bytes += (data.length + 2);
             			lines.add(new Attachment(data, filename));
+//            			System.out.println("Bytes: " + (data.length + 2) + " Filename: " + filename + "\n");
 					}else{
-						System.out.print("Line: " + line + "\n");
+//						System.out.print("Bytes: " + (line.length() + 2) + " Line: " + line + "\n");
 	            		lines.add(line);
-	            		bytes += line.length();
+	            		if (blockLineCount > 1) {
+	            			// don't count the bytes of the first 2 lines, the APPEND and the server continuation
+		            		bytes += (line.length() + 2);
+						}
 					}
             		lineNumber++;
+            		blockLineCount++;
             	}
             	// append size to first line, call session.CL
-            	String firstLine = (String) lines.get(0) + " {" + bytes + "}";
+            	// TODO why do I need to subtract 2 bytes?
+            	String firstLine = (String) lines.get(0) + " {" + (bytes -2) + "}";
             	session.CL(firstLine);
             	
             	// second line call session.SL
