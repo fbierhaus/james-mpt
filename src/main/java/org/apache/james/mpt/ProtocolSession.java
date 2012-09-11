@@ -40,6 +40,9 @@ import java.util.regex.Pattern;
  * @version $Revision: 776401 $
  */
 public class ProtocolSession implements ProtocolInteractor {
+	
+	private static final String PART_START = "--";
+	
     private boolean continued = false;
 
     private boolean continuationExpected = false;
@@ -197,6 +200,11 @@ public class ProtocolSession implements ProtocolInteractor {
     	testElements.add(new SetSessionElement(alias));
     }
     
+    public void BINARY_RESPONSE(String line, String location, String lastClientMessage){
+    	testElements.add(new BinaryResponseElement(line, location, lastClientMessage));
+    }
+    
+    
     public void BINARY(Attachment attachment){
     	testElements.add(new ClientAttachment(attachment));
     }
@@ -296,9 +304,9 @@ public class ProtocolSession implements ProtocolInteractor {
      * this line.
      */
     private class ServerResponse implements ProtocolElement {
-        private String lastClientMessage;
+        protected String lastClientMessage;
 
-        private String expectedLine;
+        protected String expectedLine;
 
         protected String location;
         
@@ -650,6 +658,49 @@ public class ProtocolSession implements ProtocolInteractor {
 		public boolean isClient() {
 			return false;
 		}	
+    }
+    
+    public class BinaryResponseElement extends ServerResponse{
+
+
+    	/**
+		 * @param expectedPattern
+		 * @param location
+		 */
+		public BinaryResponseElement(String expectedPattern, String location, String lastClientMessage) {
+			super(expectedPattern, location, lastClientMessage, null);
+		}
+
+
+		/**
+    	 * Swallow lines until we see an end of a part
+    	 */
+		@Override
+		public void testProtocol(boolean continueAfterFailure) throws Exception {
+            String testLine = currentSession.readLine();
+            while (! testLine.startsWith(PART_START)) {
+            	testLine = currentSession.readLine();
+			}
+            
+            if (!match(expectedLine, testLine)) {
+                String errMsg = "\nLocation: " + location + "\nLastClientMsg: "
+                        + lastClientMessage + "\nExpected: '" + expectedLine
+                        + "'\nActual   : '" + testLine + "'";
+                if (continueAfterFailure) {
+                    System.out.println(errMsg);
+                } else {
+                    throw new InvalidServerResponseException(errMsg);
+                }
+            }
+ 
+		}
+
+
+		@Override
+		public boolean isClient() {
+			return false;
+		}
+    	
     }
     
     public class ClientAttachment implements ProtocolElement {

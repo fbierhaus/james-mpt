@@ -66,7 +66,9 @@ public class ProtocolSessionBuilder {
     public static final String SLEEP_TAG = "SLEEP:";
 
 	public static final String ATTACHMENT_TAG = "FILE=";
-
+	
+	public static final String BINARY_TAG = "<BINARY_RESPONSE>";
+	
     private final Properties variables;
     
     
@@ -248,7 +250,7 @@ public class ProtocolSessionBuilder {
 //						System.out.print("Bytes: " + (line.length() + 2) + " Line: " + line + "\n");
 	            		lines.add(line);
 	            		if (blockLineCount > 1) {
-	            			// don't count the bytes of the first 2 lines, the APPEND and the server continuation
+	            			// don't count the bytes of the first 2 lines (the APPEND command itself & the server continuation)
 		            		bytes += (line.length() + 2);
 						}
 					}
@@ -283,6 +285,15 @@ public class ProtocolSessionBuilder {
             } else if (line.startsWith(SLEEP_TAG)){
             	long millis = getSleepTime(line);
             	session.SLEEP(millis);
+            } else if (line.startsWith(BINARY_TAG)){
+            	// get the next line
+            	line = reader.readLine();
+            	// Trim off "S: "
+                if (line.length() > 3) {
+                    line = line.substring(3);
+                }
+
+                session.BINARY_RESPONSE(line, location, lastClientMsg);
             } else {
                 String prefix = line;
                 if (line.length() > 3) {

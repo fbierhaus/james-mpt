@@ -91,4 +91,9 @@ public interface ProtocolInteractor {
      * @return
      */
     public Map<String, Session> getSessions();
+    
+    /**
+     * Swallows the binary section of a response.
+     */
+    public abstract void BINARY_RESPONSE(String line, String location, String lastClientMessage);
 }
