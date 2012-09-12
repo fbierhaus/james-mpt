@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 public class ProtocolSession implements ProtocolInteractor {
 	
 	private static final String PART_START = "--";
+	private static final String CLOSE_FETCH = ")";
 	
     private boolean continued = false;
 
@@ -678,7 +679,7 @@ public class ProtocolSession implements ProtocolInteractor {
 		@Override
 		public void testProtocol(boolean continueAfterFailure) throws Exception {
             String testLine = currentSession.readLine();
-            while (! testLine.startsWith(PART_START)) {
+            while ((!testLine.startsWith(PART_START)) && (!testLine.equals(CLOSE_FETCH))) {
             	testLine = currentSession.readLine();
 			}
             
