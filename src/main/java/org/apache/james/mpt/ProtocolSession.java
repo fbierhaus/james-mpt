@@ -41,8 +41,9 @@ import java.util.regex.Pattern;
  */
 public class ProtocolSession implements ProtocolInteractor {
 	
-	private static final String PART_START = "--";
-	private static final String CLOSE_FETCH = ")";
+	static final Pattern BOUNDARY_CAPTURE_PATTERN = Pattern.compile("boundary=\"(.*)\"");
+	
+	private String currentBoundary = null;
 	
     private boolean continued = false;
 
@@ -365,6 +366,16 @@ public class ProtocolSession implements ProtocolInteractor {
 
         protected void checkResponse(Session session, boolean continueAfterFailure) throws Exception {
             String testLine = readLine(session);
+            
+            // look for boundary and remember it
+            Matcher m = BOUNDARY_CAPTURE_PATTERN.matcher(testLine);
+            if (m.find()) {
+				String capture = m.group(1);
+				if (capture != null) {
+					currentBoundary = capture;
+				}
+			}
+            
             if (!match(expectedLine, testLine)) {
                 String errMsg = "\nLocation: " + location + "\nLastClientMsg: "
                         + lastClientMessage + "\nExpected: '" + expectedLine
@@ -679,7 +690,8 @@ public class ProtocolSession implements ProtocolInteractor {
 		@Override
 		public void testProtocol(boolean continueAfterFailure) throws Exception {
             String testLine = currentSession.readLine();
-            while ((!testLine.startsWith(PART_START)) && (!testLine.equals(CLOSE_FETCH))) {
+//            while ((! isBoundaryLine(testLine)) && (!testLine.equals(CLOSE_FETCH))) {
+            while (! isBoundaryLine(testLine)) {
             	testLine = currentSession.readLine();
 			}
             
@@ -702,6 +714,9 @@ public class ProtocolSession implements ProtocolInteractor {
 			return false;
 		}
     	
+		private boolean isBoundaryLine(String line){
+			return line.contains(currentBoundary);
+		}
     }
     
     public class ClientAttachment implements ProtocolElement {

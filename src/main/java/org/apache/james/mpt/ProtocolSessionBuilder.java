@@ -252,7 +252,7 @@ public class ProtocolSessionBuilder {
 //						System.out.print("Bytes: " + (line.length() + 2) + " Line: " + line + "\n");
 	            		lines.add(line);
 	            		if (blockLineCount > 1) {
-	            			// don't count the bytes of the first 2 lines (the APPEND command itself & the server continuation)
+	            			// don't count the bytes of the first 2 lines of the block (the APPEND command itself & the server continuation)
 		            		bytes += (line.length() + 2);
 						}
 					}
@@ -260,8 +260,7 @@ public class ProtocolSessionBuilder {
             		blockLineCount++;
             		line = reader.readLine();
             	}
-
-//    			System.out.println("**** last line: " + lines.get(lines.size() - 1));
+    			
         		
             	// append size to first line, call session.CL
             	// TODO why do I need to subtract 2 bytes?
