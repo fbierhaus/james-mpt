@@ -57,7 +57,7 @@ public class ProtocolSessionBuilder {
     
     public static final String OPEN_ATTACHEMNT_BLOCK_TAG = "ATTACHMENT {";
     
-    public static final String CLOSE_ATTACHEMNT_BLOCK_TAG = "}";
+    public static final String CLOSE_ATTACHMENT_BLOCK_TAG = "}";
 
     public static final String COMMENT_TAG = "#";
 
@@ -235,9 +235,11 @@ public class ProtocolSessionBuilder {
             	List lines = new ArrayList();
             	int bytes = 0;
             	int blockLineCount = 0;
+
             	
-            	while(!line.startsWith(CLOSE_ATTACHEMNT_BLOCK_TAG)){
-            		line = reader.readLine();
+        		line = reader.readLine();  // prime the while statement
+        		lineNumber++;
+        		while(!line.startsWith(CLOSE_ATTACHMENT_BLOCK_TAG)){
             		if (line.startsWith(ATTACHMENT_TAG)) {
             			// read file into byte[]
             			String filename = getFilename(line);
@@ -256,20 +258,28 @@ public class ProtocolSessionBuilder {
 					}
             		lineNumber++;
             		blockLineCount++;
+            		line = reader.readLine();
             	}
+
+//    			System.out.println("**** last line: " + lines.get(lines.size() - 1));
+        		
             	// append size to first line, call session.CL
             	// TODO why do I need to subtract 2 bytes?
-            	String firstLine = (String) lines.get(0) + " {" + (bytes -2) + "}";
+            	String firstLine = (String) lines.get(0) + " {" + (bytes - 2) + "}";
             	session.CL(firstLine);
             	
             	// second line call session.SL
             	session.SL((String) lines.get(1), location, firstLine);
             	
             	// for the rest, read in lines and call session.CL
+            	String currentLine = null;
+				// don't include last line
             	for (int i = 2; i < lines.size(); i++) {
             		Object lineObject = lines.get(i);
             		if (lineObject instanceof String) {
-						session.CL((String)lineObject);
+            			currentLine = (String) lineObject;
+//            			System.out.println("**** current line: " + currentLine);
+						session.CL(currentLine);
 					} else {
 						session.BINARY((Attachment) lineObject);
 					}
@@ -305,7 +315,9 @@ public class ProtocolSessionBuilder {
         }
     }
 
-    protected List<String> getVariableNames(String line){
+
+
+	protected List<String> getVariableNames(String line){
     	Matcher m = Pattern.compile("<([\\w]+?)>").matcher(line);
         List<String> variableNames = new ArrayList<String>();
 
