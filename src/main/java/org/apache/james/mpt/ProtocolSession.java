@@ -405,8 +405,19 @@ public class ProtocolSession implements ProtocolInteractor {
         		// need to assign some variables from server response
         		Matcher m = Pattern.compile(expected).matcher(actual);
         		int n = 0;
+        		String capture = null;
         		while (m.find()){
-        			variables.setProperty(variableNames[n], m.group(1));
+        			capture =  m.group(1);
+        			variables.setProperty(variableNames[n], capture);
+        			// if the value can be parsed to a number, also set variableName-1 variable
+        			// this is a workaround until expressions are supported, e.g. #{${uid} - 1}
+        			try {
+    					long num = Long.parseLong(capture);
+    					variables.setProperty(variableNames[n] + "-1", String.valueOf(num - 1));
+					} catch (NumberFormatException e) {
+						// swallow exception, not a number
+					}
+        			
         			n++;
         		}
         	} 
