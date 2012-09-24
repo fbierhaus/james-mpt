@@ -53,6 +53,7 @@ import org.apache.tools.ant.types.resources.Union;
 public class MailProtocolTestTask extends Task implements Monitor{
 
 	private static final String TIMESTAMP = "timestamp";
+	private static final String MILLIS = "millis";
 	
     private boolean quiet = false;
     private File script;
@@ -213,7 +214,6 @@ public class MailProtocolTestTask extends Task implements Monitor{
 		}
     	
         final ProtocolSessionBuilder builder = new ProtocolSessionBuilder();
-        Date current = new Date();
         DateFormat df = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
         
         if (scripts == null) {
@@ -236,9 +236,12 @@ public class MailProtocolTestTask extends Task implements Monitor{
                 final Runner runner = new Runner();
 
                 try {
+                    Date current = new Date();
                     
                     final InputStream inputStream = resource.getInputStream();
                     builder.setVariable(TIMESTAMP, df.format(current));
+                    builder.setVariable(MILLIS, String.valueOf(new Date().getTime()));
+                    
                     ProtocolInteractor testScript = builder.buildProtocolSession(resource.getName(), inputStream, sessionMap);
                     runner.runSessions(testScript);
                     
