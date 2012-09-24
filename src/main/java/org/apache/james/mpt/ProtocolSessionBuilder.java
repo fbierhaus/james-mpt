@@ -248,8 +248,13 @@ public class ProtocolSessionBuilder {
             			bytes += (data.length + 2);
             			lines.add(new Attachment(data, filename));
 //            			System.out.println("Bytes: " + (data.length + 2) + " Filename: " + filename + "\n");
-					}else{
+					} else if (line.startsWith(COMMENT_TAG)){
+						// skip this line
+					} else{
 //						System.out.print("Bytes: " + (line.length() + 2) + " Line: " + line + "\n");
+						// Do we need to substitute any variables?
+						line = substituteVariables(line);
+						
 	            		lines.add(line);
 	            		if (blockLineCount > 1) {
 	            			// don't count the bytes of the first 2 lines of the block (the APPEND command itself & the server continuation)
@@ -314,7 +319,37 @@ public class ProtocolSessionBuilder {
         }
     }
 
-
+    /**
+     * Replaces ${<code>NAME</code>} with variable value.
+     * @param line not null
+     * @return not null
+     */
+    protected String substituteVariables(String line) {
+        if (variables.size() > 0) {
+            final StringBuffer buffer = new StringBuffer(line);
+            int start = 0;
+            int end = 0;
+            while (start >= 0 && end >= 0) { 
+                start = buffer.indexOf("${", end);
+                if (start < 0) {
+                    break;
+                }
+                end = buffer.indexOf("}", start);
+                if (end < 0) {
+                    break;
+                }
+                final String name = buffer.substring(start+2, end);
+                final String value = variables.getProperty(name);
+                if (value != null) {
+                    buffer.replace(start, end + 1, value);
+                    final int variableLength = (end - start + 2);
+                    end = end + (value.length() - variableLength);
+                }
+            }
+            line = buffer.toString();
+        }
+        return line;
+    }
 
 	protected List<String> getVariableNames(String line){
     	Matcher m = Pattern.compile("<([\\w]+?)>").matcher(line);
